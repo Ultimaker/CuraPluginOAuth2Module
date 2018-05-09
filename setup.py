@@ -11,5 +11,5 @@ setup(
     author_email="c.terbeke@ultimaker.com",
     url="https://github.com/Ultimaker/CuraPluginOAuth2Module",
     packages=["OAuth2Client"],
-    requires=["requests", "jwt"]
+    requires=["requests", "PyJWT"]
 )
