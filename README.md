@@ -21,7 +21,7 @@ from lib.CuraPluginOAuth2Module.OAuth2Client.AuthorizationService import Authori
 from lib.CuraPluginOAuth2Module.OAuth2Client.models import OAuth2Settings
 
 auth_settings = OAuth2Settings(
-
+    # Place actual auth settings here.
 )
 auth_service = AuthorizationService(auth_settings)
 ```
