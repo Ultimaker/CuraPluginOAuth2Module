@@ -1,4 +1,5 @@
-# Copyright (c) 2017 Ultimaker B.V.
+# Copyright (c) 2018 Ultimaker B.V.
+# CuraPluginOAuth2Module is released under the terms of the LGPLv3 or higher.
 from http.server import HTTPServer
 
 from .AuthorizationHelpers import AuthorizationHelpers
