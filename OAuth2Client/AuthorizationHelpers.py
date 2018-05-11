@@ -104,7 +104,7 @@ class AuthorizationHelpers:
             jwt_data = jwt.decode(token, public_key, algorithms=["RS512"])
             return UserProfile(user_id = jwt_data["user_id"],
                                username = jwt_data["username"],
-                               profile_image_url = jwt_data["profile_image_url"])
+                               profile_image_url = jwt_data.get("profile_image_url"))
         except jwt.exceptions.ExpiredSignatureError:
             Logger.log("d", "JWT token was expired, it should be refreshed.")
         except jwt.exceptions.InvalidTokenError as error:
