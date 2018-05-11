@@ -4,7 +4,7 @@ import os.path
 from typing import Optional, Callable
 
 from http.server import BaseHTTPRequestHandler
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlparse
 
 # Plugin imports need to be relative to work in final builds.
 from .AuthorizationHelpers import AuthorizationHelpers
@@ -29,15 +29,15 @@ class AuthorizationRequestHandler(BaseHTTPRequestHandler):
         """Entry point for GET requests"""
 
         # Extract values from the query string.
-        path, _, query_string = self.path.partition('?')
-        query = parse_qs(query_string)
-        token_response = None
+        parsed_url = urlparse(self.path)
+        query = parse_qs(parsed_url.query)
 
         # Handle the possible requests
-        if path == "/callback":
+        if parsed_url.path == "/callback":
             server_response, token_response = self._handleCallback(query)
         else:
             server_response = self._handleNotFound()
+            token_response = None
 
         # Send the data to the browser.
         self._sendHeaders(server_response.status, server_response.content_type)
@@ -80,7 +80,7 @@ class AuthorizationRequestHandler(BaseHTTPRequestHandler):
     @staticmethod
     def _handleNotFound() -> "ResponseData":
         """Handle all other non-existing server calls."""
-        return ResponseData(status=HTTP_STATUS["NOT_FOUND"], content_type="text/html", data_stream="")
+        return ResponseData(status=HTTP_STATUS["NOT_FOUND"], content_type="text/html", data_stream=b"Not found.")
 
     def _sendHeaders(self, status: "ResponseStatus", content_type) -> None:
         """Send out the headers"""
