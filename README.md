@@ -2,19 +2,17 @@
 A python module for out-of-the-box OAuth2 client support for Cura plugins.
 
 ## Installation
-You can either use `pip install` or `git submodule` to install the module.
-
-```bash
-pip install https://github.com/Ultimaker/CuraPluginOAuth2Module
-```
+The safest way of installing this module is using git submodule.
+This is handy because Cura plugins require all the dependencies to be in the packaged plugin.
 
 ```
-git submodule add https://github.com/Ultimaker/CuraPluginOAuth2Module lib/CuraPluginOAuth2Module
+git submodule add git@github.com:Ultimaker/CuraPluginOAuth2Module.git lib/CuraPluginOAuth2Module
 ```
 
 ## Usage
 Simply include the `AuthorizationService` like you would with any other Python class.
-The samples here assume you have loaded the module as git submodule.
+The samples here assume you have loaded the module as git submodule under `/lib/CuraPluginOAuth2Module`.
+Make sure there is an `__init__.py` in your `/lib` folder as well!
 
 ```python
 from lib.CuraPluginOAuth2Module.OAuth2Client.AuthorizationService import AuthorizationService
