@@ -14,6 +14,8 @@ class OAuth2Settings(BaseModel):
     CLIENT_ID = None  # type: Optional[str]
     CLIENT_SCOPES = None  # type: Optional[str]
     CALLBACK_URL = None  # type: Optional[str]
+    AUTH_SUCCESS_REDIRECT = None  # type: Optional[str]
+    AUTH_FAILED_REDIRECT = None  # type: Optional[str]
 
 
 # User profile data template.
@@ -44,12 +46,14 @@ class ResponseStatus(BaseModel):
 # Response data template.
 class ResponseData(BaseModel):
     status = None  # type: Optional[ResponseStatus]
-    data_stream = None  # type: bytes
+    data_stream = None  # type: Optional[bytes]
+    redirect_uri = None  # type: Optional[str]
     content_type = "text/html"  # type: str
 
 
 # Possible HTTP responses.
 HTTP_STATUS = {
     "OK": ResponseStatus(code=200, message="OK"),
-    "NOT_FOUND": ResponseStatus(code=404, message="NOT FOUND")
+    "NOT_FOUND": ResponseStatus(code=404, message="NOT FOUND"),
+    "REDIRECT": ResponseStatus(code=302, message="REDIRECT")
 }
