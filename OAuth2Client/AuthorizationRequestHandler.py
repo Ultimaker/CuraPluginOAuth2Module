@@ -42,6 +42,7 @@ class AuthorizationRequestHandler(BaseHTTPRequestHandler):
         self._sendHeaders(server_response.status, server_response.content_type, server_response.redirect_uri)
         
         if server_response.data_stream:
+            # If there is data in the response, we send it.
             self._sendData(server_response.data_stream)
 
         if token_response:
@@ -77,6 +78,7 @@ class AuthorizationRequestHandler(BaseHTTPRequestHandler):
         return ResponseData(
             status = HTTP_STATUS["REDIRECT"],
             content_type = "text/html",
+            data_stream = b"Redirecting...",
             redirect_uri = self.authorization_helpers.getSettings().AUTH_SUCCESS_REDIRECT
         ), token_response
 
