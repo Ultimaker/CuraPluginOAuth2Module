@@ -77,9 +77,9 @@ class AuthorizationRequestHandler(BaseHTTPRequestHandler):
         
         return ResponseData(
             status = HTTP_STATUS["REDIRECT"],
-            content_type = "text/html",
             data_stream = b"Redirecting...",
-            redirect_uri = self.authorization_helpers.getSettings().AUTH_SUCCESS_REDIRECT
+            redirect_uri = self.authorization_helpers.settings.AUTH_SUCCESS_REDIRECT if token_response.success else
+            self.authorization_helpers.settings.AUTH_FAILED_REDIRECT
         ), token_response
 
     @staticmethod

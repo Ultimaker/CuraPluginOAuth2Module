@@ -23,7 +23,8 @@ class AuthorizationHelpers:
         self._settings = settings
         self._token_url = "{}/token".format(self._settings.OAUTH_SERVER_URL)
 
-    def getSettings(self) -> "OAuth2Settings":
+    @property
+    def settings(self) -> "OAuth2Settings":
         """Get the OAuth2 settings object."""
         return self._settings
 
