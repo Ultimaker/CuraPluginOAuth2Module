@@ -1,6 +1,5 @@
 # Copyright (c) 2018 Ultimaker B.V.
 # CuraPluginOAuth2Module is released under the terms of the LGPLv3 or higher.
-import os.path
 from typing import Optional, Callable
 
 from http.server import BaseHTTPRequestHandler
@@ -40,8 +39,11 @@ class AuthorizationRequestHandler(BaseHTTPRequestHandler):
             token_response = None
 
         # Send the data to the browser.
-        self._sendHeaders(server_response.status, server_response.content_type)
-        self._sendData(server_response.data_stream)
+        self._sendHeaders(server_response.status, server_response.content_type, server_response.redirect_uri)
+        
+        if server_response.data_stream:
+            # If there is data in the response, we send it.
+            self._sendData(server_response.data_stream)
 
         if token_response:
             # Trigger the callback if we got a response.
@@ -72,20 +74,25 @@ class AuthorizationRequestHandler(BaseHTTPRequestHandler):
                 success = False,
                 error_message = "Something unexpected happened when trying to log in, please try again."
             )
-
-        with open(os.path.join(os.path.dirname(__file__), "html", "callback.html"), "rb") as data:
-            return ResponseData(status = HTTP_STATUS["OK"], content_type = "text/html", data_stream = data.read()),\
-                   token_response
+        
+        return ResponseData(
+            status = HTTP_STATUS["REDIRECT"],
+            data_stream = b"Redirecting...",
+            redirect_uri = self.authorization_helpers.settings.AUTH_SUCCESS_REDIRECT if token_response.success else
+            self.authorization_helpers.settings.AUTH_FAILED_REDIRECT
+        ), token_response
 
     @staticmethod
     def _handleNotFound() -> "ResponseData":
         """Handle all other non-existing server calls."""
         return ResponseData(status=HTTP_STATUS["NOT_FOUND"], content_type="text/html", data_stream=b"Not found.")
 
-    def _sendHeaders(self, status: "ResponseStatus", content_type) -> None:
+    def _sendHeaders(self, status: "ResponseStatus", content_type: str, redirect_uri: str = None) -> None:
         """Send out the headers"""
         self.send_response(status.code, status.message)
-        self.send_header('Content-type', content_type)
+        self.send_header("Content-type", content_type)
+        if redirect_uri:
+            self.send_header("Location", redirect_uri)
         self.end_headers()
 
     def _sendData(self, data: bytes) -> None:
