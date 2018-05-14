@@ -11,7 +11,7 @@ from UM.Preferences import Preferences
 from UM.Signal import Signal
 
 # Plugin imports need to be relative to work in final builds.
-from lib.CuraPluginOAuth2Module.OAuth2Client.LocalAuthorizationServer import LocalAuthorizationServer
+from .LocalAuthorizationServer import LocalAuthorizationServer
 from .AuthorizationHelpers import AuthorizationHelpers
 from .models import OAuth2Settings, AuthenticationResponse, UserProfile
 
