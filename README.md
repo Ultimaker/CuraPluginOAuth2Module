@@ -24,5 +24,11 @@ auth_settings = OAuth2Settings(
 auth_service = AuthorizationService(auth_settings)
 ```
 
+More documentation will follow soon.
+
 ## Maintenance
 The current active maintainer of this repository is <c.terbeke@ultimaker.com>. Please contact me for questions.
+
+## License
+CuraPluginOAuth2Module is released under the terms of the LGPLv3 or higher.
+A copy of this license should be included with the software.
