@@ -16,16 +16,16 @@ from .models import AuthenticationResponse
 
 class LocalAuthorizationServer:
     def __init__(self, auth_helpers: "AuthorizationHelpers",
-                 onAuthStateChanged: "Callable[[AuthenticationResponse], any]"):
+                 auth_state_changed_callback: "Callable[[AuthenticationResponse], any]"):
         """
         :param auth_helpers: An instance of the authorization helpers class.
-        :param onAuthStateChanged: A callback function to be called when the authorization state changes.
+        :param auth_state_changed_callback: A callback function to be called when the authorization state changes.
         """
         self._web_server = None  # type: Optional[HTTPServer]
         self._web_server_thread = None  # type: Optional[threading.Thread]
         self._web_server_port = auth_helpers.settings.CALLBACK_PORT
         self._auth_helpers = auth_helpers
-        self._onAuthStateChanged = onAuthStateChanged
+        self._auth_state_changed_callback = auth_state_changed_callback
 
     def start(self, verification_code: "str") -> None:
         """
@@ -40,7 +40,7 @@ class LocalAuthorizationServer:
         self._web_server = AuthorizationRequestServer(("0.0.0.0", self._web_server_port),
                                                       AuthorizationRequestHandler)
         self._web_server.setAuthorizationHelpers(self._auth_helpers)
-        self._web_server.setAuthorizationCallback(self._onAuthStateChanged)
+        self._web_server.setAuthorizationCallback(self._auth_state_changed_callback)
         self._web_server.setVerificationCode(verification_code)
 
         # Start the server on a new thread.
