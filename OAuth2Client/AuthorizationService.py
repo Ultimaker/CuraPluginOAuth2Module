@@ -1,9 +1,7 @@
 # Copyright (c) 2018 Ultimaker B.V.
 # CuraPluginOAuth2Module is released under the terms of the LGPLv3 or higher.
 import json
-import threading
 import webbrowser
-from http.server import HTTPServer
 from typing import Optional
 from urllib.parse import urlencode
 
@@ -13,9 +11,8 @@ from UM.Preferences import Preferences
 from UM.Signal import Signal
 
 # Plugin imports need to be relative to work in final builds.
+from lib.CuraPluginOAuth2Module.OAuth2Client.LocalAuthorizationServer import LocalAuthorizationServer
 from .AuthorizationHelpers import AuthorizationHelpers
-from .AuthorizationRequestServer import AuthorizationRequestServer
-from .AuthorizationRequestHandler import AuthorizationRequestHandler
 from .models import OAuth2Settings, AuthenticationResponse, UserProfile
 
 
@@ -36,13 +33,11 @@ class AuthorizationService:
     def __init__(self, settings: "OAuth2Settings"):
         self._settings = settings
         self._auth_helpers = AuthorizationHelpers(settings)
-        self._web_server = None  # type: Optional[HTTPServer]
-        self._web_server_thread = None  # type: Optional[threading.Thread]
-        self._web_server_port = self._settings.CALLBACK_PORT  # type: str
         self._auth_url = "{}/authorize".format(self._settings.OAUTH_SERVER_URL)
         self._auth_data = None  # type: Optional[AuthenticationResponse]
         self._user_profile = None  # type: Optional[UserProfile]
         self._cura_preferences = Preferences.getInstance()
+        self._server = LocalAuthorizationServer(self._auth_helpers, self._onAuthStateChanged)
         self._loadAuthData()
 
     def getUserProfile(self) -> Optional["UserProfile"]:
@@ -133,32 +128,7 @@ class AuthorizationService:
         webbrowser.open_new("{}?{}".format(self._auth_url, query_string))
         
         # Start a local web server to receive the callback URL on.
-        self._startWebServer(verification_code)
-
-    def _startWebServer(self, verification_code: str) -> None:
-        """Start the local web server to handle the authorization callback."""
-
-        Logger.log("d", "Starting local web server to handle authorization callback on port %s", self._web_server_port)
-        
-        # Create the server and inject the callback and code.
-        self._web_server = AuthorizationRequestServer(("0.0.0.0", self._web_server_port), AuthorizationRequestHandler)
-        self._web_server.setAuthorizationHelpers(self._auth_helpers)
-        self._web_server.setAuthorizationCallback(self._onAuthStateChanged)
-        self._web_server.setVerificationCode(verification_code)
-        
-        # Start the server on a new thread.
-        self._web_server_thread = threading.Thread(None, self._web_server.serve_forever)
-        self._web_server_thread.start()
-
-    def _stopWebServer(self) -> None:
-        """Stop the web server if it was running. Also deletes the objects."""
-
-        Logger.log("d", "Stopping local web server...")
-        
-        if self._web_server:
-            self._web_server.server_close()
-        self._web_server = None
-        self._web_server_thread = None
+        self._server.start(verification_code)
 
     def _onAuthStateChanged(self, auth_response: "AuthenticationResponse") -> None:
         """Callback method for a successful authentication flow."""
@@ -167,7 +137,7 @@ class AuthorizationService:
             self.onAuthStateChanged.emit(True)
         else:
             self.onAuthenticationError.emit(False, auth_response.err_message)
-        self._stopWebServer()  # Stop the web server at all times.
+        self._server.stop()  # Stop the web server at all times.
 
     def _loadAuthData(self) -> None:
         """Load authentication data from preferences if available."""
