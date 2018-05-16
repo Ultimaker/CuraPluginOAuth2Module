@@ -71,8 +71,11 @@ class AuthorizationService:
 
         # The JWT was expired or invalid and we should request a new one.
         self._auth_data = self._auth_helpers.getAccessTokenUsingRefreshToken(self._auth_data.refresh_token)
-        user_data = self._auth_helpers.parseJWT(self._auth_data.access_token)
-        return user_data
+        if not self._auth_data:
+            # The token could not be refreshed using the refresh token. We should login again.
+            return None
+
+        return self._auth_helpers.parseJWT(self._auth_data.access_token)
 
     def getAccessToken(self) -> Optional[str]:
         """
@@ -90,12 +93,12 @@ class AuthorizationService:
         Refresh the access token when it expired.
         """
         self._storeAuthData(self._auth_helpers.getAccessTokenUsingRefreshToken(self._auth_data.refresh_token))
-        self.onAuthStateChanged.emit(True)
+        self.onAuthStateChanged.emit(logged_in = True)
     
     def deleteAuthData(self):
         """Delete authentication data from preferences and locally."""
         self._storeAuthData()
-        self.onAuthStateChanged.emit(False)
+        self.onAuthStateChanged.emit(logged_in = False)
 
     def startAuthorizationFlow(self) -> None:
         """Start a new OAuth2 authorization flow."""
@@ -126,12 +129,12 @@ class AuthorizationService:
         self._server.start(verification_code)
 
     def _onAuthStateChanged(self, auth_response: "AuthenticationResponse") -> None:
-        """Callback method for a successful authentication flow."""
+        """Callback method for an authentication flow."""
         if auth_response.success:
             self._storeAuthData(auth_response)
-            self.onAuthStateChanged.emit(True)
+            self.onAuthStateChanged.emit(logged_in = True)
         else:
-            self.onAuthenticationError.emit(False, auth_response.err_message)
+            self.onAuthenticationError.emit(logged_in = False, error_message = auth_response.err_message)
         self._server.stop()  # Stop the web server at all times.
 
     def _loadAuthData(self) -> None:
@@ -141,7 +144,7 @@ class AuthorizationService:
             preferences_data = json.loads(self._cura_preferences.getValue(self.AUTH_DATA_PREFERENCE_KEY))
             if preferences_data:
                 self._auth_data = AuthenticationResponse(**preferences_data)
-                self.onAuthStateChanged.emit(True)
+                self.onAuthStateChanged.emit(logged_in = True)
         except ValueError as err:
             Logger.log("w", "Could not load auth data from preferences: %s", err)
 
