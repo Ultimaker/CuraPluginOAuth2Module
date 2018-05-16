@@ -7,7 +7,6 @@ from base64 import b64encode
 from typing import Optional
 
 import requests
-import jwt
 
 # As this module is specific for Cura plugins, we can rely on these imports.
 from UM.Logger import Logger
@@ -86,35 +85,27 @@ class AuthorizationHelpers:
                                       expires_in=token_data["expires_in"],
                                       scope=token_data["scope"])
 
-    def getPublicKeyJWT(self) -> Optional[str]:
+    def parseJWT(self, access_token: str) -> Optional["UserProfile"]:
         """
-        Get the public key to decode the JWT.
-        :return: The public key as string.
-        """
-        key_request = requests.get("{}/public-key".format(self._settings.OAUTH_SERVER_URL))
-        if key_request.status_code not in (200, 201):
-            Logger.log("w", "Could not retrieve public key from auth server: %s", key_request.text)
-            return None
-        return key_request.text
-
-    @staticmethod
-    def parseJWT(token: str, public_key: str) -> Optional["UserProfile"]:
-        """
-        Decode the JWT token to get the profile info.
-        :param token: The encoded JWT token.
-        :param public_key: The public key to decode with.
+        Calls the authentication API endpoint to get the token data.
+        :param access_token: The encoded JWT token.
         :return: Dict containing some profile data.
         """
-        try:
-            jwt_data = jwt.decode(token, public_key, algorithms=["RS512"])
-            return UserProfile(user_id = jwt_data["user_id"],
-                               username = jwt_data["username"],
-                               profile_image_url = jwt_data.get("profile_image_url"))
-        except jwt.exceptions.ExpiredSignatureError:
-            Logger.log("d", "JWT token was expired, it should be refreshed.")
-        except jwt.exceptions.InvalidTokenError as error:
-            Logger.log("w", "JWT token was invalid: %s", error)
-        return None
+        token_request = requests.get("{}/check-token".format(self._settings.OAUTH_SERVER_URL), headers = {
+            "Authorization": "Bearer {}".format(access_token)
+        })
+        if token_request.status_code not in (200, 201):
+            Logger.log("w", "Could not retrieve token data from auth server: %s", token_request.text)
+            return None
+        user_data = token_request.json().get("data")
+        if not user_data or not isinstance(user_data, dict):
+            Logger.log("w", "Could not parse user data from token: %s", user_data)
+            return None
+        return UserProfile(
+            user_id = user_data["user_id"],
+            username = user_data["username"],
+            profile_image_url = user_data["profile_image_url"]
+        )
 
     @staticmethod
     def generateVerificationCode(code_length: int = 16) -> str:

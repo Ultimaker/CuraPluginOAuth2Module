@@ -64,19 +64,14 @@ class AuthorizationService:
             # If no auth data exists, we should always log in again.
             return None
 
-        public_key = self._auth_helpers.getPublicKeyJWT()
-        if not public_key:
-            # If the public key wasn't found (e.g. not online), we cannot parse the JWT.
-            return None
-
-        user_data = self._auth_helpers.parseJWT(self._auth_data.access_token, public_key)
+        user_data = self._auth_helpers.parseJWT(self._auth_data.access_token)
         if user_data:
             # If the profile was found, we return it immediately.
             return user_data
 
         # The JWT was expired or invalid and we should request a new one.
         self._auth_data = self._auth_helpers.getAccessTokenUsingRefreshToken(self._auth_data.refresh_token)
-        user_data = self._auth_helpers.parseJWT(self._auth_data.access_token, public_key)
+        user_data = self._auth_helpers.parseJWT(self._auth_data.access_token)
         return user_data
 
     def getAccessToken(self) -> Optional[str]:
