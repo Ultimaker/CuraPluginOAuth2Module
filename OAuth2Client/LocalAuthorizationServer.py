@@ -32,6 +32,11 @@ class LocalAuthorizationServer:
         Starts the local web server to handle the authorization callback.
         :param verification_code: The verification code part of the OAuth2 client identification.
         """
+        if self._web_server:
+            # If the server is already running (because of a previously aborted auth flow), we don't have to start it.
+            # We still inject the new verification code though.
+            self._web_server.setVerificationCode(verification_code)
+            return
 
         Logger.log("d", "Starting local web server to handle authorization callback on port %s",
                    self._web_server_port)
