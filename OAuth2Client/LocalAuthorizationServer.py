@@ -49,7 +49,7 @@ class LocalAuthorizationServer:
         self._web_server.setVerificationCode(verification_code)
 
         # Start the server on a new thread.
-        self._web_server_thread = threading.Thread(None, self._web_server.serve_forever)
+        self._web_server_thread = threading.Thread(None, self._web_server.serve_forever, daemon = True)
         self._web_server_thread.start()
 
     def stop(self) -> None:
