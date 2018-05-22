@@ -104,7 +104,7 @@ class AuthorizationHelpers:
         return UserProfile(
             user_id = user_data["user_id"],
             username = user_data["username"],
-            profile_image_url = user_data["profile_image_url"]
+            profile_image_url = user_data.get("profile_image_url", "")
         )
 
     @staticmethod
