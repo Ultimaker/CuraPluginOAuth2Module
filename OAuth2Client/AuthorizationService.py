@@ -7,7 +7,6 @@ from urllib.parse import urlencode
 
 # As this module is specific for Cura plugins, we can rely on these imports.
 from UM.Logger import Logger
-from UM.Preferences import Preferences
 from UM.Signal import Signal
 
 # Plugin imports need to be relative to work in final builds.
@@ -21,8 +20,6 @@ class AuthorizationService:
     The authorization service is responsible for handling the login flow,
     storing user credentials and providing account information.
     """
-    
-    AUTH_DATA_PREFERENCE_KEY = "cura_drive_plugin/auth_data"
 
     # Emit signal when authentication is completed.
     onAuthStateChanged = Signal()
@@ -30,13 +27,13 @@ class AuthorizationService:
     # Emit signal when authentication failed.
     onAuthenticationError = Signal()
 
-    def __init__(self, settings: "OAuth2Settings"):
+    def __init__(self, application, settings: "OAuth2Settings"):
         self._settings = settings
         self._auth_helpers = AuthorizationHelpers(settings)
         self._auth_url = "{}/authorize".format(self._settings.OAUTH_SERVER_URL)
         self._auth_data = None  # type: Optional[AuthenticationResponse]
         self._user_profile = None  # type: Optional[UserProfile]
-        self._cura_preferences = Preferences.getInstance()
+        self._cura_preferences = application.getPreferences()
         self._server = LocalAuthorizationServer(self._auth_helpers, self._onAuthStateChanged)
         self._loadAuthData()
 
@@ -48,11 +45,9 @@ class AuthorizationService:
         if not self._user_profile:
             # If no user profile was stored locally, we try to get it from JWT.
             self._user_profile = self._parseJWT()
-
         if not self._user_profile:
             # If there is still no user profile from the JWT, we have to log in again.
             return None
-
         return self._user_profile
 
     def _parseJWT(self) -> Optional["UserProfile"]:
@@ -63,18 +58,15 @@ class AuthorizationService:
         if not self._auth_data:
             # If no auth data exists, we should always log in again.
             return None
-
         user_data = self._auth_helpers.parseJWT(self._auth_data.access_token)
         if user_data:
             # If the profile was found, we return it immediately.
             return user_data
-
         # The JWT was expired or invalid and we should request a new one.
         self._auth_data = self._auth_helpers.getAccessTokenUsingRefreshToken(self._auth_data.refresh_token)
         if not self._auth_data:
             # The token could not be refreshed using the refresh token. We should login again.
             return None
-
         return self._auth_helpers.parseJWT(self._auth_data.access_token)
 
     def getAccessToken(self) -> Optional[str]:
@@ -139,9 +131,9 @@ class AuthorizationService:
 
     def _loadAuthData(self) -> None:
         """Load authentication data from preferences if available."""
-        self._cura_preferences.addPreference(self.AUTH_DATA_PREFERENCE_KEY, "{}")  # Ensure the preference exists.
+        self._cura_preferences.addPreference(self._settings.AUTH_DATA_PREFERENCE_KEY, "{}")
         try:
-            preferences_data = json.loads(self._cura_preferences.getValue(self.AUTH_DATA_PREFERENCE_KEY))
+            preferences_data = json.loads(self._cura_preferences.getValue(self._settings.AUTH_DATA_PREFERENCE_KEY))
             if preferences_data:
                 self._auth_data = AuthenticationResponse(**preferences_data)
                 self.onAuthStateChanged.emit(logged_in = True)
@@ -153,7 +145,7 @@ class AuthorizationService:
         self._auth_data = auth_data
         if auth_data:
             self._user_profile = self.getUserProfile()
-            self._cura_preferences.setValue(self.AUTH_DATA_PREFERENCE_KEY, json.dumps(vars(auth_data)))
+            self._cura_preferences.setValue(self._settings.AUTH_DATA_PREFERENCE_KEY, json.dumps(vars(auth_data)))
         else:
             self._user_profile = None
-            self._cura_preferences.resetPreference(self.AUTH_DATA_PREFERENCE_KEY)
+            self._cura_preferences.resetPreference(self._settings.AUTH_DATA_PREFERENCE_KEY)
