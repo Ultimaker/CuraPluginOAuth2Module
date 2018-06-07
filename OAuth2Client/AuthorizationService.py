@@ -27,13 +27,13 @@ class AuthorizationService:
     # Emit signal when authentication failed.
     onAuthenticationError = Signal()
 
-    def __init__(self, application, settings: "OAuth2Settings"):
+    def __init__(self, preferences, settings: "OAuth2Settings"):
         self._settings = settings
         self._auth_helpers = AuthorizationHelpers(settings)
         self._auth_url = "{}/authorize".format(self._settings.OAUTH_SERVER_URL)
         self._auth_data = None  # type: Optional[AuthenticationResponse]
         self._user_profile = None  # type: Optional[UserProfile]
-        self._cura_preferences = application.getPreferences()
+        self._cura_preferences = preferences
         self._server = LocalAuthorizationServer(self._auth_helpers, self._onAuthStateChanged)
         self._loadAuthData()
 
