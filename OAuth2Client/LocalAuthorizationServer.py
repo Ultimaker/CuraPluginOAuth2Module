@@ -16,16 +16,20 @@ from .models import AuthenticationResponse
 
 class LocalAuthorizationServer:
     def __init__(self, auth_helpers: "AuthorizationHelpers",
-                 auth_state_changed_callback: "Callable[[AuthenticationResponse], any]"):
+                 auth_state_changed_callback: "Callable[[AuthenticationResponse], any]",
+                 daemon: bool):
         """
         :param auth_helpers: An instance of the authorization helpers class.
         :param auth_state_changed_callback: A callback function to be called when the authorization state changes.
+        :param daemon: Whether the server thread should be run in daemon mode. Note: Daemon threads are abruptly stopped
+            at shutdown. Their resources (e.g. open files) may never be released.
         """
         self._web_server = None  # type: Optional[HTTPServer]
         self._web_server_thread = None  # type: Optional[threading.Thread]
         self._web_server_port = auth_helpers.settings.CALLBACK_PORT
         self._auth_helpers = auth_helpers
         self._auth_state_changed_callback = auth_state_changed_callback
+        self._daemon = daemon
 
     def start(self, verification_code: "str") -> None:
         """
@@ -49,7 +53,7 @@ class LocalAuthorizationServer:
         self._web_server.setVerificationCode(verification_code)
 
         # Start the server on a new thread.
-        self._web_server_thread = threading.Thread(None, self._web_server.serve_forever, daemon = True)
+        self._web_server_thread = threading.Thread(None, self._web_server.serve_forever, daemon = self._daemon)
         self._web_server_thread.start()
 
     def stop(self) -> None:
