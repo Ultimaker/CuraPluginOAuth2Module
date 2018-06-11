@@ -34,7 +34,7 @@ class AuthorizationService:
         self._auth_data = None  # type: Optional[AuthenticationResponse]
         self._user_profile = None  # type: Optional[UserProfile]
         self._cura_preferences = preferences
-        self._server = LocalAuthorizationServer(self._auth_helpers, self._onAuthStateChanged)
+        self._server = LocalAuthorizationServer(self._auth_helpers, self._onAuthStateChanged, daemon=True)
         self._loadAuthData()
 
     def getUserProfile(self) -> Optional["UserProfile"]:
